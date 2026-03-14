@@ -1,216 +1,320 @@
 ---
-name: gads-responsive-search-ads-creator
+name: gads-editor-csv-creator
 description: >
-  Create Responsive Search Ads (RSA) for Google Ads based on a landing page analysis.
-  Use this skill whenever the user wants to create RSA ads, ad copy, ad groups with ads,
-  or responsive search ads – based on a landing page analysis or keyword cluster. Also
-  trigger when the user wants to generate ad copy for Google Ads from an existing analysis
-  file produced by gads-landing-page-analyzer. Trigger phrases include: "create ads",
-  "RSA", "responsive search ads", "ad foundation", "ad group with ads",
-  "Google Ads ads", "write ads for", "make ads", "ad copy",
-  "generate ad copy", "ad text", or any request to produce
-  Google Ads ad copy from a keyword list or landing page analysis. Even if the user just says
-  "make ads from this analysis" or "now I want ads" after running a landing page
-  analysis, this skill should trigger.
+  Generate a Google Ads Editor CSV import file from analysis and RSA Markdown files.
+  ALWAYS use this skill when the user mentions Google Ads Editor, CSV export, import file,
+  or turning ad copy / RSA files / keyword clusters into a Google Ads Editor file. This is
+  the final step in the gads toolchain – after gads-landing-page-analyzer and
+  gads-responsive-search-ads-creator have produced Markdown output, this skill creates a
+  ready-to-import CSV with campaigns, ad groups, keywords, RSA ads, and negative keywords.
+  Trigger on: "CSV", "Google Ads Editor", "import file", "importfil", "Editor CSV",
+  "export to Editor", "skapa CSV", "create the CSV", "gör CSV", "make the import file",
+  "GAds Editor", "bulk import", "editor import", "now create the file", "exportera",
+  "generate the file", or "next step" / "now what" after RSA creation.
+  When in doubt, trigger – this skill handles all Google Ads Editor CSV generation.
 ---
 
-# Google Ads RSA Creator
+# Google Ads Editor CSV Creator
 
-You generate complete Responsive Search Ad (RSA) copy for Google Ads – one Markdown document per keyword cluster. The input is a landing page analysis (produced by `gads-landing-page-analyzer` or structured the same way) and the output is publication-ready ad copy with all fields Google Ads requires.
+You generate a single CSV file that can be imported into Google Ads Editor to create complete Search campaigns: campaign settings, location targeting, ad groups, keywords, RSA ads, and negative keywords – all from the Markdown files produced by the earlier skills in the chain.
 
-## Why a dedicated skill for this
+## Context: Where This Fits
 
-Writing good RSA copy is deceptively hard. Each headline has only 30 characters. Each description has only 90. Google combines them freely, so every element must work independently and in any combination. On top of that, LLMs are notoriously bad at counting characters – they routinely produce headlines that are 32 or 35 characters while believing they're within the limit. This skill addresses both challenges: it provides a framework for writing high-CTR, high-relevance ads, and it includes a validation script that programmatically enforces character limits after generation.
+This skill is the third and final link in a toolchain:
 
-## Workflow
+1. **gads-landing-page-analyzer** – Analyzes a landing page and produces a structured Markdown file with target segments, offers, keyword clusters, and negative keywords.
+2. **gads-responsive-search-ads-creator** – Reads the analysis and produces one Markdown file per keyword cluster with complete RSA copy (headlines, descriptions, keywords, URLs, etc.).
+3. **gads-editor-csv-creator** (this skill) – Reads the analysis file and all RSA files and produces one CSV file ready for Google Ads Editor import.
 
-### Phase 1: Gather Prerequisites
+## Input Format
 
-**1. Analysis file**
+The skill reads a folder containing:
 
-You need a Markdown file containing a landing page analysis. The document must include:
+1. **One analysis file** (Markdown) – produced by gads-landing-page-analyzer. Contains negative keywords (in the "Negativa sökord" or "Negative keywords" section), landing page URL, geographic scope, and target segments.
 
-- Landing page URL
-- Geographic scope
-- Target segments and offers (segment → offer pairs)
-- One or more keyword clusters, each with: target segment, offer, search intent, and keyword list
-- Negative keywords (optional)
-
-If the user hasn't provided an analysis file, ask for one.
-
-**2. Marketing context**
-
-Check whether you already have background information about the sender (e.g. from a `CLAUDE.md` in the project root or other context already present in the conversation). If such information exists, use it directly without asking.
-
-If you do **not** have background information, ask the user: *"Do you have supplementary information about the sender, the industry, the target audiences, or the offer? This can be text directly in the chat, a file to upload, a link to Google Drive, or similar. Such information improves the accuracy of the ads, but is not a requirement."*
-
-### Phase 2: Generate Ad Copy (autonomous – do not interrupt)
-
-Work through all keyword clusters without stopping. Deliver the result as finished Markdown files.
-
-**For each keyword cluster**, create one Markdown document. All documents from the same analysis are saved in the same folder. Name the folder after the campaign (slugified).
-
-#### Document Format
-
-Each document uses this structure:
+2. **One or more RSA files** (Markdown) – produced by gads-responsive-search-ads-creator. Each file describes an ad group with this structure:
 
 ```
-Campaign: <Name>
-Ad group: <Name>
-Keywords: <comma-separated list in quotes>
-Location targeting: <geographic targeting>
+Campaign: <name>
+Ad group: <name>
+Keywords: "kw1", "kw2", [kw3], kw4
+Location targeting: <geo targeting>
 Final URL: <URL>
 Display path – level 1: <max 15 chars>
 Display path – level 2: <max 15 chars>
-Headline 1 (any position): <max 30 chars>
-Headline 2 (position 2): <max 30 chars>
-...
-Description 1 (any position): <max 90 chars>
-...
+Headline N (P): <text>
+Description N (P): <text>
 ```
 
-**Copy-ready output – no annotations:** Each line after the colon and space must contain only the actual ad text that goes into Google Ads. Do not append character counts, category labels, or any other annotations (e.g. `[28 chars – keyword match]` or `[82 chars]`). The output should be directly copy-pasteable into Google Ads without any cleanup. The validation script handles character counting separately.
+Legacy Swedish keys (`Kampanj:`, `Annonsgrupp:`, `Sökord:`, `Platsinriktning:`, `Slutlig webbadress:`, `Visningsadress – nivå 1/2:`, `Rubrik N:`, `Beskrivning N:`) are also supported for backward compatibility.
 
-#### Field Rules
+A single RSA file may contain **multiple ads** for the same ad group (max 3), separated by `---`. Each ad after the first inherits the ad group's campaign, ad group name, keywords, and targeting from the header – only headlines, descriptions, display paths, and final URL vary.
 
-**Campaign:** Identical across all files from the same analysis. Short and recognizable in Google Ads UI and analytics. Example: "Camera surveillance".
+### Parsing Rules
 
-**Ad group:** Identifies the keyword cluster. Starts with the campaign name, followed by a distinguishing suffix. Example: "Camera_surveillance_outdoor".
+Every line containing `: ` (colon followed by space) is a key-value pair. The value after `: ` is copied verbatim (stripped of leading/trailing whitespace).
 
-**Keywords:** Comma-separated, each keyword in quotation marks "…". Example: `"outdoor camera surveillance", "outdoor video surveillance"`
+**Keyword match types** are determined by the surrounding characters:
+- `"keyword"` → Phrase match
+- `[keyword]` → Exact match
+- `keyword` (no surrounding quotes or brackets) → Broad match
 
-**Location targeting:** Copy the geographic scope from the analysis. If national, write "National".
+**Headline positions** map from the parenthetical to CSV values:
+- `(any position)` → empty (unpinned)
+- `(position 1)` → `1`
+- `(position 2)` → `2`
+- `(position 3)` → `3`
 
-**Final URL:** The landing page URL from the analysis.
+**Description positions** follow the same logic (only positions 1 and 2 are valid for descriptions).
 
-**Display path – level 1 and 2:** Suggest fictional or real directory names (max 15 chars each) that help the searcher understand what awaits on the landing page. Example: "services" / "cameras".
+## Workflow
 
-#### Headlines (Headline 1–15)
+### Phase 1: Gather Prerequisites (interactive)
 
-RSA supports up to 15 headlines. Google places them in three possible positions. Each headline can be **unpinned** (any position – Google chooses placement) or **pinned** to position 1, 2, or 3.
+Ask all necessary questions in **a single message**. Adapt based on what is already known from the conversation.
 
-**Pinning logic:**
+**1. Input folder**
 
-- **Unpinned (any position):** Headlines containing one of the cluster's keywords. Google's algorithm naturally places these in position 1 because they match the search term best.
-- **Position 2:** Headlines highlighting benefits, advantages, or credibility. Prevented from taking position 1 but shown frequently.
-- **Position 3:** Headlines with CTA (call-to-action). Shown only when the ad gets three headlines – the right moment for a call to action.
+If the user hasn't pointed to a folder containing analysis and RSA files, ask where they are. If you can see them in the workspace already, confirm the path.
 
-**Format:** `Headline N (P)` where N is 1–15 and P is "any position", "position 1", "position 2", or "position 3".
+**2. Daily budget**
 
-**Character limit: Max 30 characters per headline (including spaces). This is a hard Google Ads limit.**
+Ask: *"What daily budget do you want for the campaign(s)? Enter an amount (e.g. 200). Leave blank if you prefer to set the budget manually after importing into Google Ads Editor."*
 
-#### Descriptions (Description 1–4)
+**3. Target CPA**
 
-RSA supports up to 4 descriptions. Google places them in two possible positions.
+Ask: *"What target CPA (cost per acquisition) do you want for the campaign(s)? Enter an amount in the account's currency (e.g. 150). This will be used with the 'Maximize conversions' bid strategy."*
 
-**Pinning logic:**
+**4. Tracking settings**
 
-- **Unpinned (any position):** Descriptions that develop the offer, mention keywords, or explain what the customer gets. Google's algorithm picks the most relevant one for position 1.
-- **Position 2:** Pure CTA descriptions or calls to action. Shown only when the ad gets two descriptions, functioning as a closer.
+Present three options:
+- **Option 1 (default):** Use a suggested UTM template that works with GA4, Matomo, and other tools:
+  - Tracking template: `{lpurl}`
+  - Final URL suffix: `utm_source=google&utm_medium=cpc&utm_campaign={campaignid}&utm_term={keyword}&utm_content={creative}&mtm_group={adgroupid}&mtm_cid={gclid}`
+- **Option 2:** Leave empty – use the account's default tracking settings.
+- **Option 3:** Enter your own tracking template and/or suffix.
 
-**Format:** `Description N (P)` where N is 1–4 and P is "any position", "position 1", or "position 2".
+**5. Summary and confirmation**
 
-**Character limit: Max 90 characters per description (including spaces). This is a hard Google Ads limit.**
+Before generating, show a summary of all settings that will be used:
+- Bid strategy: Maximize conversions (Target CPA: [user-specified amount])
+- Networks: Google Search only
+- Status: Campaign paused; ad groups, keywords, and ads enabled (activate by enabling the campaign)
+- Negative keywords: Campaign level, phrase match
+- Language targeting: [detected from analysis/keywords]
+- Location targeting: [from RSA files]
+- Count: N campaigns, N ad groups, N keywords, N ads found
 
-**Rules for descriptions:**
-1. Develop the message from the headlines – don't repeat them.
-2. Highlight USPs that didn't fit in the headlines.
-3. At least one description must be a pure CTA (pinned to position 2).
+Ask the user to confirm or suggest changes. If changes are requested, show an updated summary and ask again.
 
-#### Principles for High-CTR, High-Relevance Ad Copy
+### Phase 2: Generate CSV (autonomous)
 
-The ads must optimize for two goals: high click-through rate (CTR) and high relevance between keywords and ad text.
+Once the user confirms, work without interruption:
 
-**Keyword relevance (Ad Relevance)**
-
-This is the single most important factor for Quality Score.
-
-- At least 3–4 headlines must contain the cluster's primary keyword or close variants. They don't need to be verbatim – inflections, synonyms, and natural rephrasings work – but the core term must be immediately recognizable.
-- At least 3 other headlines must *not* contain keywords – they give Google variation to combine and prevent the ad from feeling repetitive.
-- At least one description must mention the keyword or offer in plain text.
-- The ad copy must reflect the search intent from the analysis. Transactional intent requires action-oriented copy ("Order", "Book", "Get a quote"). Informational intent requires knowledge-oriented copy ("How it works…", "Guide to…").
-
-**Headline strategy for CTR**
-
-Each headline has only 30 characters. Every word must earn its place.
-
-- Write headlines in varying lengths – some short (15–20 chars), some using the full space (28–30 chars). Variation gives Google more combination options and fits more screen sizes.
-- Each headline must make sense on its own – Google can combine any of them.
-- No repetition: no headline should convey the same message as another, even with different words.
-- Headlines should cover these categories with approximate distribution across 15 headlines:
-  - **Keyword match (4–5):** Headlines directly matching what the searcher types, with variants of the cluster's keywords. ("Camera surveillance for HOA")
-  - **Benefit/advantage (3–4):** Concrete outcome the searcher gets. ("Safer for residents")
-  - **Credibility/social proof (2–3):** Experience, certifications, customer count. ("30 years of experience")
-  - **Differentiation (2–3):** What sets the sender apart from competitors. ("Our own 24/7 monitoring center")
-  - **CTA (2–3):** Clear calls to action with variation. ("Request a quote today")
-- Use specific, concrete words over vague ones. "Free needs assessment" beats "Contact us". Numbers ("30 years of experience", "Response within 24h") increase CTR.
-- No exclamation marks in headlines – Google doesn't allow them.
-
-**Description strategy for CTR**
-
-Descriptions have 90 characters – enough for one full sentence, but not more.
-
-- Place the most important information at the start. On mobile, text can be truncated.
-- Use active verbs and action-oriented language. "We design and install" beats "Design and installation services".
-- At least one description should be a pure CTA with a clear call to action and possibly an incentive ("Request a free quote – response within 24h").
-- Other descriptions should develop the offer, address objections, or highlight USPs that didn't fit in headlines.
-- Avoid generic phrases like "We offer high-quality services" – they waste characters without adding meaning.
-
-**Combination harmony**
-
-Since Google combines headlines and descriptions freely, every combination of unpinned elements must produce an ad that is coherent, not contradictory, and not repetitive:
-
-- Avoid two headlines that mention the same keyword in the exact same form – if Google shows them side by side, the ad looks clumsy.
-- Headline + description should complement each other: if the headline says *what*, the description should explain *why* or *how*.
-- Avoid the same CTA appearing in both a headline and a description – it becomes redundant if shown together.
-
-**Adapt to sender context**
-
-If marketing context or other sender context is available:
-
-- Tone and word choice should match the brand's voice.
-- USPs, certifications, customer promises, and offers from the context should be woven into headlines and descriptions.
-- If the sender has a known market position (e.g. industry leader, local player, affordable alternative), this should come through in the ad text.
-
-#### Keyword Coverage – Additional Ads if Needed
-
-If not all keywords in the cluster appear among headlines and descriptions in the first ad, suggest additional ads in the same ad group (max 3 ads total per ad group). Having just one RSA per ad group is strongly preferred. All ads in the same ad group go in the same document, separated by a clear divider.
-
-#### Character Limit Validation
-
-After generating all Markdown files, run the bundled validation script:
+1. **Parse all RSA files.** Extract campaign name, ad group names, keywords with match types, headlines with positions, descriptions with positions, URLs, and display paths. Use the bundled script for reliable parsing:
 
 ```bash
-python <skill-path>/scripts/validate_rsa.py <folder-with-markdown-files>
+python <skill-path>/scripts/generate_csv.py <input-folder> [options]
 ```
 
-The script checks: headlines ≤ 30 chars, descriptions ≤ 90 chars, display path levels ≤ 15 chars. If violations are found, fix them and re-run until everything passes.
+The script handles all parsing, validation, and CSV generation. See the Script Reference section below for usage details.
 
-This step is essential because LLMs count characters unreliably. The script is the safety net.
+2. **Parse the analysis file** to extract negative keywords from the "Negativa sökord" or "Negative keywords" section.
 
-## Worked Example
+3. **Validate character limits:**
+   - Headlines: max 30 characters
+   - Descriptions: max 90 characters
+   - Display paths: max 15 characters each
 
-See `references/worked-example.md` for a complete RSA document for the cluster "Camera surveillance for HOAs and apartment buildings". It demonstrates the correct format, pinning logic, category distribution, and character counting.
+   If violations are found, **warn the user** in the chat message but still generate the CSV. List all violations so the user can fix them.
 
-## Do / Don't
+4. **Detect language** from the keywords and analysis. Map to Google Ads language code (e.g. Swedish → `sv`, English → `en`).
 
-| Don't | Do | Why |
-|-------|-----|-----|
-| "Great camera surveillance for HOA" | "Camera surveillance for HOA" | "Great" is filler – says nothing, wastes 6 chars. |
-| "Contact us" | "Book free consultation" | Generic CTA vs specific CTA with incentive. Specific gets higher CTR. |
-| "We offer professional security solutions of high quality" | "We design, install, and service camera systems for HOAs." | Vague and generic vs concrete with active verbs. |
-| "Camera surveillance HOA" + "Camera surveillance for HOA" | "Camera surveillance HOA" + "Cameras in stairwells and waste rooms" | Near-identical headlines → waste. Better to vary and cover more keywords. |
-| "Safe HOA. Contact us today for more information about our services." | "Camera surveillance for garages, stairwells, and waste rooms. Tailored for HOAs." | Description should be specific and informative – not vague with a generic CTA. |
+5. **Parse location targeting** from the RSA files. The `Platsinriktning` / `Location targeting` field uses a compact ID-based format:
 
-## Typography
+   ```
+   [+|-]<ID>[, [+|-]<ID>]*
+   ```
 
-Use correct Unicode characters:
+   where `<ID>` is a numeric Google Ads geo target Criteria ID (from https://developers.google.com/google-ads/api/data/geotargets). Prefix rules:
+   - No prefix or `+` prefix → location is **included** (targeted)
+   - `-` prefix → location is **excluded** (negative targeting)
 
-- En dash: – (U+2013)
-- Em dash: — (U+2014)
-- Quotation marks: "…" (U+201C/U+201D)
-- Arrow: → (U+2192)
+   Examples:
+   - `1012511` → include Gothenburg
+   - `+21000, -1012511` → include Stockholm County but exclude Gothenburg
+   - `21000, 9067792, 1012335` → include multiple locations
+
+   The script parses this by stripping whitespace, splitting on commas, and separating included/excluded IDs. Included locations generate rows with `Location ID` set. Excluded locations generate rows with `Location ID` set and `Criterion Type` set to `Excluded`.
+
+6. **Generate the CSV file** with all rows in hierarchical order.
+
+7. **Save the CSV file** with name `<CampaignName>_<YYYY-MM-DD>.csv` (campaign name slugified, today's date).
+
+8. **Present the result** with a summary including: filename, counts (campaigns, ad groups, keywords by match type, ads, negative keywords), any warnings, and import instructions.
+
+## CSV Output Format
+
+### General Rules
+
+- Standard Google Ads Editor column headers (English) on the first row.
+- Comma-separated values.
+- UTF-8 encoding with BOM (`\xEF\xBB\xBF`) for compatibility with Excel and Google Ads Editor.
+- Fields containing commas, quotes, or newlines are quoted; internal quotes are doubled.
+- Leave fields empty (not `[]`) for values that should not be changed.
+
+### Row Types and Order (hierarchical)
+
+The CSV contains these row types in this order:
+
+1. **Campaign row** – one per campaign.
+2. **Location targeting rows** – one per location, directly after the campaign row.
+3. **Per ad group (repeat for each):**
+   a. **Ad group row**
+   b. **Keyword rows** – one per keyword
+   c. **Ad row(s)** – one per RSA ad (typically 1, max 3)
+4. **Campaign-level negative keywords** – all negatives from the analysis, at the end of the file.
+
+### Columns by Row Type
+
+#### Campaign Row
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name from RSA files |
+| Campaign type | `Search` |
+| Campaign daily budget | User-specified budget (or empty) |
+| Language | Language code detected from analysis (e.g. `sv`) |
+| Networks | `Google Search` |
+| Bid strategy type | `Maximize conversions` |
+| Target CPA | User-specified target CPA amount |
+| Campaign status | `Paused` |
+| EU Political Ads | `No` |
+| Tracking template | Per user choice |
+| Final URL suffix | Per user choice |
+
+#### Location Targeting Rows
+
+The location targeting field in RSA files contains a comma-separated list of numeric Google Ads Criteria IDs, optionally prefixed with `+` (include) or `-` (exclude). The script creates **one row per location ID** – this is what Google Ads Editor requires.
+
+For **included** locations:
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Location ID | Google Ads Criteria ID (e.g. `2752` for Sweden) |
+
+For **excluded** locations (prefixed with `-`):
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Location ID | Google Ads Criteria ID |
+| Criterion Type | `Excluded` |
+
+#### Ad Group Row
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Ad Group | Ad group name from RSA file |
+| Ad Group status | `Enabled` |
+| Default max. CPC | `0.01` |
+| Max. CPM | `0.01` |
+| Target CPV | `0.01` |
+| Target CPM | `0.01` |
+
+The nominal bid values (0.01) are included because Google Ads Editor requires ad group-level bids even when using a smart bid strategy like "Maximize conversions". These values have no practical effect – the smart bid strategy overrides them – but their absence causes import warnings in Google Ads Editor.
+
+#### Keyword Row (one per keyword)
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Ad Group | Ad group name |
+| Keyword | The keyword text with match-type formatting: `"keyword"` for phrase match, `[keyword]` for exact match, or plain text for broad match. Google Ads Editor requires this "power posting" format in addition to the Criterion Type column. |
+| Criterion Type | `Broad`, `Phrase`, or `Exact` |
+| Status | `Enabled` |
+
+#### Ad Row (RSA)
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Ad Group | Ad group name |
+| Ad Name | `{AdGroup}_RSA_1` (or `_RSA_2`, `_RSA_3` for additional ads) |
+| Ad type | `Responsive search ad` |
+| Status | `Enabled` |
+| Final URL | Final URL from RSA file |
+| Path 1 | Display path level 1 |
+| Path 2 | Display path level 2 |
+| Headline 1 | Headline 1 text |
+| Headline 1 position | Position value (empty/1/2/3) |
+| ... | ... (up to Headline 15 + position) |
+| Description 1 | Description 1 text |
+| Description 1 position | Position value (empty/1/2) |
+| ... | ... (up to Description 4 + position) |
+
+#### Negative Keyword Row (campaign level)
+
+| Column | Value |
+|--------|-------|
+| Campaign | Campaign name |
+| Keyword | The negative keyword in phrase match format (wrapped in `"..."`) |
+| Criterion Type | `Campaign negative` |
+
+Negative keywords default to phrase match. Each keyword is wrapped in quotation marks in the Keyword column.
+
+## Script Reference
+
+The bundled Python script `scripts/generate_csv.py` handles all parsing, validation, and CSV generation. It is the backbone of this skill – use it rather than writing CSV generation logic from scratch.
+
+**Usage:**
+
+```bash
+python <skill-path>/scripts/generate_csv.py \
+  --input-dir <folder-with-md-files> \
+  --output-dir <where-to-save-csv> \
+  [--budget <daily-budget>] \
+  [--target-cpa <amount>] \
+  [--tracking-template <template>] \
+  [--final-url-suffix <suffix>] \
+  [--language <lang-code>] \
+  [--location-ids [+|-]<ID>,...]
+```
+
+The script:
+- Auto-detects which file is the analysis (looks for "Negativa sökord" / "Negative keywords" section) and which are RSA files (looks for "Kampanj:" / "Campaign:" on the first line).
+- Parses all key-value pairs from RSA files, including multi-ad files separated by `---`.
+- Extracts negative keywords from the analysis file.
+- Parses location targeting IDs (format: `[+|-]ID, ...`) and creates one CSV row per location, with excluded locations getting `Criterion Type: Excluded`.
+- Adds nominal bid values (0.01) on ad group rows to satisfy Google Ads Editor's requirement for ad group-level bids when using smart bid strategies.
+- Validates character limits and prints warnings to stderr.
+- Generates the CSV with proper encoding (UTF-8 BOM), quoting, and column order.
+- Outputs the filename and statistics as JSON to stdout.
+
+If `--language` is not specified, the script detects it from the keyword content. If `--location-ids` is not specified, it reads the "Platsinriktning" / "Location targeting" field from RSA files and parses the ID list (format: `[+|-]ID, ...`).
+
+## Design Principles
+
+This skill is opinionated – it follows best practices as defaults and requires the user to actively choose to deviate:
+
+- **One campaign, many ad groups** is the standard structure. Each ad group has 1–3 RSA ads and a cluster of thematically related keywords.
+- **Phrase match is the default** for regular keywords (marked with `"..."` in the RSA files).
+- **Exact match** for keywords marked with `[...]`.
+- **Broad match** for keywords without any surrounding characters.
+- **Maximize conversions with Target CPA** as the bid strategy. The user is asked for their desired target CPA during Phase 1.
+- **Google Search only** – no Search Partners, for maximum control.
+- **Campaign paused, everything else enabled** at creation – enable the campaign to go live.
+- **Negative keywords at campaign level** with phrase match.
 
 ## Language
 
-Respond in the same language the user used. The ads must be in the same language as the keywords in the analysis file.
+Respond in the same language the user uses. The CSV file always uses English column headers (Google Ads Editor requires this).
+
+## Typography
+
+Use proper Unicode characters in all output:
+- En dash: – (U+2013)
+- Quotation marks: "..." (U+201C/U+201D)
+- Arrow: → (U+2192)

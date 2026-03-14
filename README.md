@@ -1,44 +1,59 @@
-# gads-responsive-search-ads-creator
+# gads-editor-csv-creator
 
-A Claude skill that generates complete Responsive Search Ad (RSA) copy for Google Ads from a landing page analysis.
+A Claude skill that generates a Google Ads Editor CSV import file from analysis and RSA Markdown files.
 
 ## What it does
 
-Takes a structured landing page analysis (produced by [gads-landing-page-analyzer](https://github.com/AnnonsKansen/gads-landing-page-analyzer) or similar) and generates publication-ready RSA ad copy – one Markdown document per keyword cluster.
+Given a folder of Markdown files produced by [gads-landing-page-analyzer](https://github.com/Kntnt/gads-landing-page-analyzer) and [gads-responsive-search-ads-creator](https://github.com/Kntnt/gads-responsive-search-ads-creator), this skill produces a single CSV file ready for import into Google Ads Editor -- complete with campaign settings, location targeting, ad groups, keywords, RSA ads, and negative keywords.
 
-Each document includes 15 headlines, 4 descriptions, display paths, keyword lists, and pinning logic – all within Google Ads character limits.
+This is the third and final link in a toolchain:
 
-## Why
+1. **gads-landing-page-analyzer** -- analyzes a landing page and produces keyword clusters
+2. **gads-responsive-search-ads-creator** -- generates RSA ad copy for each cluster
+3. **gads-editor-csv-creator** (this skill) -- turns it all into a Google Ads Editor CSV
 
-Writing RSA copy is deceptively hard. Headlines max out at 30 characters, descriptions at 90, and Google combines them freely. On top of that, LLMs count characters unreliably. This skill solves both: it provides a framework for high-CTR, high-relevance ads, and a validation script that enforces limits programmatically.
+## When it triggers
 
-## Structure
+The skill activates when you ask Claude to create a Google Ads Editor CSV, import file, or export ad copy to Editor format. Trigger phrases include "CSV", "Google Ads Editor", "import file", "importfil", "Editor CSV", "skapa CSV", and similar. It also triggers on "next step" after running the RSA creator.
+
+## Installation
+
+In Claude Desktop (Cowork), install the packaged `.skill` file via the skill installer. Alternatively, copy this repository into your skills directory.
+
+## Repo structure
 
 ```
-gads-responsive-search-ads-creator/
-├── SKILL.md                        # Skill instructions
-├── scripts/
-│   └── validate_rsa.py             # Character limit validator
-└── references/
-    └── worked-example.md           # Complete example RSA document
+SKILL.md                           Main skill instructions
+scripts/
+  generate_csv.py                  CSV generation script (parsing, validation, output)
+references/
+  exempel/                         Example input files (analysis + RSA Markdown)
 ```
 
-## Validation script
+## Configuration
 
-The bundled `validate_rsa.py` checks all character limits after generation:
+During CSV generation, the skill asks for:
 
-```bash
-python scripts/validate_rsa.py path/to/output/
-```
+- **Daily budget** -- campaign budget (optional)
+- **Target CPA** -- target cost per acquisition for the Maximize conversions bid strategy
+- **Tracking settings** -- default, suggested UTM template, or custom
 
-Exit code 0 means all OK; exit code 1 means violations found (with details).
+## Opinionated defaults
 
-## Suggested workflow
+The skill follows best practices as defaults:
 
-1. Create a project directory for the campaign you're working on – if one doesn't already exist.
-2. Add a `CLAUDE.md` file in the project root with background information about the sender, industry, target audiences, value propositions, and anything else that's relevant. The skill reads this file automatically and uses it to improve the ad copy.
-3. Run the landing page analysis first (using `gads-landing-page-analyzer`) to produce the analysis file the skill needs as input.
-4. Trigger the skill with a prompt like: *"Create RSA ads based on the analysis in analysis.md"*
+- **Maximize conversions with Target CPA** as the bid strategy
+- **Nominal ad group bids** (0.01) for Default max. CPC, Max. CPM, Target CPV, and Target CPM -- required by Google Ads Editor even when using smart bidding (the values have no effect on actual bidding)
+- **One location row per target location** -- location targeting uses numeric Google Ads Criteria IDs (format: `[+|-]ID, ...`). Each ID produces its own row. IDs prefixed with `-` are excluded (negative targeting).
+- **Phrase match** as the default keyword match type
+- **Google Search only** -- no Search Partners
+- **Campaign paused, everything else enabled** at creation -- enable the campaign to go live
+- **EU political ads declaration** set to "No" by default
+- **Negative keywords at campaign level** with phrase match
+
+## Future extension (v2)
+
+A future version will support **updating existing campaigns** using `#Original` columns. This requires the user to provide an exported CSV from Google Ads Editor (current state) alongside updated RSA files. The skill will compare and produce `#Original` columns for changed fields. This is not in scope for v1.
 
 ## License
 
