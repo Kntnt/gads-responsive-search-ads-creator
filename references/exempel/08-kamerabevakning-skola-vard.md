@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_skola_vard
 Keywords: "kamerabevakning skola", "kameraövervakning skola", "övervakningskamera skola", "kamerabevakning vård", "kamerabevakning sjukhus", "kamerabevakning akutmottagning"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

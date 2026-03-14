@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_flerbostadshus
 Keywords: "kamerabevakning flerbostadshus", "kamerabevakning garage", "kamerabevakning parkeringsgarage", "kamerabevakning trapphus", "kamerabevakning soprum", "kameraövervakning flerbostadshus", "kameraövervakning parkering", "kamera i soprum"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

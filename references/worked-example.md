@@ -10,7 +10,7 @@ This is a complete RSA document for one keyword cluster. It demonstrates the cor
 Campaign: Camera Surveillance
 Ad group: Camera_Surveillance_HOA
 Keywords: "camera surveillance HOA", "camera monitoring HOA", "surveillance camera HOA", "camera surveillance homeowner association", "camera surveillance garage HOA", "camera surveillance parking garage HOA", "camera surveillance stairwell HOA", "camera surveillance trash room HOA", "camera monitoring parking HOA", "camera in trash room HOA"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

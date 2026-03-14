@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_generellt
 Keywords: "kamerabevakning", "kameraövervakning", "bevakningskamera", "bevakningskameror", "övervakningskamera", "övervakningskameror", "bevakningssystem", "videobevakning", "cctv", "cctv kamera", "cctv sverige", "kamera bevakning", "kamera övervakning", "bevaknings kamera", "övervaknings kamera", "IP-kamera"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

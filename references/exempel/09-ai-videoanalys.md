@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_ai_videoanalys
 Keywords: "videoanalys", "videoanalys kamera", "ai kamerabevakning", "AI kamera", "smart kamerabevakning", "intelligent kamerabevakning", "smart kamera övervakning", "edge AI kamera"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_molnbaserad
 Keywords: "molnbaserad kamerabevakning", "kamera online", "molnbaserad videoövervakning", "molnbaserad övervakning", "kamerabevakning molnet"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

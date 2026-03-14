@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_foretag
 Keywords: "kamerabevakning företag", "kameraövervakning företag", "bevakningskamera företag", "övervakningskamera företag", "cctv företag", "kamerabevakning kontor", "kamerabevakning industri", "kamerabevakning butik", "kamerabevakning lager", "kamerabevakning verksamhet", "övervakningskamera kontor", "kamerabevakning kommun", "övervakningskamera proffs"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

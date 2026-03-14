@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_regler
 Keywords: "kamerabevakningslagen", "tillstånd kameraövervakning", "tillstånd för kameraövervakning", "kamerabevakning regler företag", "kameraövervakning regler företag", "kamerabevakning GDPR", "kamerabevakning allmän plats", "intresseavvägning kamerabevakning", "nya kamerabevakningslagen 2025", "kameraövervakning regler brf", "kamerabevakningslagen 2025", "kamerabevakning skylt", "kamerabevakning lagringstid", "kamerabevakning IMY"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

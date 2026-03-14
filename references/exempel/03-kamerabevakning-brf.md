@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_brf
 Keywords: "kamerabevakning brf", "kameraövervakning brf", "övervakningskamera brf", "kamerabevakning bostadsrättsförening", "kamerabevakning garage brf", "kamerabevakning parkeringsgarage brf", "kamerabevakning trapphus brf", "kamerabevakning soprum brf", "kameraövervakning parkering brf", "kamera i soprum brf"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

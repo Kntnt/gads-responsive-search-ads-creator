@@ -11,15 +11,16 @@ Usage:
         --input-dir <folder> \
         --output-dir <folder> \
         [--budget <amount>] \
-        [--target-cpa <amount>] \
         [--tracking-template <template>] \
         [--final-url-suffix <suffix>] \
         [--language <code>] \
-        [--location-ids [+|-]<ID>,...]
+        [--location-id <id>] \
+        [--location-name <name>]
 """
 
 import argparse
 import csv
+import io
 import os
 import re
 import sys
@@ -28,38 +29,6 @@ from datetime import date
 from pathlib import Path
 
 
-# ---------------------------------------------------------------------------
-# Location ID parsing
-# ---------------------------------------------------------------------------
-
-def parse_location_ids(location_text: str) -> tuple[list[str], list[str]]:
-    """
-    Parse a location targeting string of the format:
-        [+|-]<ID>[, [+|-]<ID>]*
-
-    where <ID> is a numeric Google Ads geo target Criteria ID.
-    IDs prefixed with '-' are excluded; IDs with '+' or no prefix are included.
-
-    Returns (included_ids, excluded_ids) – both as lists of ID strings
-    (without the +/- prefix).
-    """
-    # Remove all whitespace, then split on commas
-    cleaned = re.sub(r"\s+", "", location_text)
-    tokens = cleaned.split(",")
-
-    included = []
-    excluded = []
-    for token in tokens:
-        if not token:
-            continue
-        if token.startswith("-"):
-            excluded.append(token[1:])
-        elif token.startswith("+"):
-            included.append(token[1:])
-        else:
-            included.append(token)
-
-    return included, excluded
 
 
 # ---------------------------------------------------------------------------
@@ -88,10 +57,34 @@ def detect_language(keywords: list[str]) -> str:
     return "en"
 
 
+def resolve_location(location_text: str) -> list[tuple[str | None, str | None]]:
+    """
+    Parse a location string that may contain multiple locations separated by
+    commas, semicolons, or newlines. Returns a list of (location_id, location_name)
+    tuples – one per location. Google Ads Editor needs one row per location.
+
+    The function does not attempt to translate or look up location names. It
+    simply checks whether each value is numeric (→ Location ID column) or
+    text (→ Location column). The responsibility for providing correct
+    Location IDs lies with the earlier steps in the toolchain.
+    """
+    parts = re.split(r"[,;\n]+", location_text)
+    results = []
+    for part in parts:
+        value = part.strip()
+        if not value:
+            continue
+        if value.isdigit():
+            results.append((value, None))   # -> Location ID
+        else:
+            results.append((None, value))   # -> Location (free text)
+    return results
+
+
 def parse_position(pos_text: str) -> str:
     """Extract numeric position from parenthetical text, or empty string."""
     pos_text = pos_text.strip().lower()
-    if "valfri" in pos_text or "any" in pos_text:
+    if "any" in pos_text:
         return ""
     m = re.search(r"position\s*(\d+)", pos_text)
     if m:
@@ -109,6 +102,10 @@ def parse_keywords(kw_string: str) -> list[tuple[str, str]]:
     - keyword   -> Broad
     """
     results = []
+    # Normalize Unicode curly quotes to ASCII straight quotes before parsing.
+    # RSA files should use straight quotes, but copy-paste from Word or macOS
+    # may introduce curly quotes (\u201c \u201d) which must be treated identically.
+    kw_string = kw_string.replace("\u201c", '"').replace("\u201d", '"')
     # Split on commas that are outside quotes/brackets
     # Simple approach: use regex to find individual keyword tokens
     tokens = re.findall(r'"[^"]*"|\[[^\]]*\]|[^,]+', kw_string)
@@ -134,18 +131,8 @@ def parse_keywords(kw_string: str) -> list[tuple[str, str]]:
 # RSA file parsing
 # ---------------------------------------------------------------------------
 
-# Key aliases: Swedish -> English
+# Key aliases: normalize English keys to internal names
 KEY_ALIASES = {
-    "kampanj": "campaign",
-    "annonsgrupp": "ad_group",
-    "sökord": "keywords",
-    "platsinriktning": "location_targeting",
-    "slutlig webbadress": "final_url",
-    "visningsadress – nivå 1": "path1",
-    "visningsadress – nivå 2": "path2",
-    "visningsadress - nivå 1": "path1",
-    "visningsadress - nivå 2": "path2",
-    # English equivalents
     "campaign": "campaign",
     "ad group": "ad_group",
     "keywords": "keywords",
@@ -159,27 +146,26 @@ KEY_ALIASES = {
 
 
 def normalize_key(key: str) -> str:
-    """Normalize a Swedish/English key to internal name."""
+    """Normalize an English key to internal name."""
     k = key.strip().lower()
     return KEY_ALIASES.get(k, k)
 
 
 def parse_headline_or_desc(key: str) -> tuple[str, int, str] | None:
     """
-    Parse a headline/description key like 'Rubrik 3 (position 2)'.
+    Parse a headline/description key like 'Headline 3 (position 2)'.
     Returns (type, number, position_csv_value) or None.
     """
-    # Swedish patterns
-    m = re.match(r"(?:rubrik|headline)\s+(\d+)\s*\(([^)]+)\)", key, re.IGNORECASE)
+    m = re.match(r"headline\s+(\d+)\s*\(([^)]+)\)", key, re.IGNORECASE)
     if m:
         return ("headline", int(m.group(1)), parse_position(m.group(2)))
-    m = re.match(r"(?:beskrivning|description)\s+(\d+)\s*\(([^)]+)\)", key, re.IGNORECASE)
+    m = re.match(r"description\s+(\d+)\s*\(([^)]+)\)", key, re.IGNORECASE)
     if m:
         return ("description", int(m.group(1)), parse_position(m.group(2)))
     return None
 
 
-def parse_rsa_file(filepath: Path) -> list[dict]:
+def parse_rsa_file(filepath: Path) -> dict:
     """
     Parse an RSA Markdown file. Returns a list of ad group dicts.
     Each file normally produces one dict, but files with multiple ads
@@ -260,7 +246,7 @@ def parse_rsa_file(filepath: Path) -> list[dict]:
 def parse_analysis_file(filepath: Path) -> list[str]:
     """
     Parse the analysis Markdown file to extract negative keywords.
-    Looks for a section titled 'Negativa sökord' or 'Negative keywords'.
+    Looks for a section titled 'Negative keywords'.
     Returns a list of keyword strings.
     """
     content = filepath.read_text(encoding="utf-8")
@@ -272,7 +258,7 @@ def parse_analysis_file(filepath: Path) -> list[str]:
     for line in lines:
         stripped = line.strip()
         # Detect section header
-        if re.match(r"^#{1,3}\s+(Negativa sökord|Negative keywords)", stripped, re.IGNORECASE):
+        if re.match(r"^#{1,3}\s+Negative keywords", stripped, re.IGNORECASE):
             in_negatives = True
             continue
         # Stop at next section header
@@ -306,14 +292,14 @@ def classify_files(input_dir: Path) -> tuple[Path | None, list[Path]]:
         content = f.read_text(encoding="utf-8", errors="replace")
         first_lines = content[:500].lower()
 
-        # Analysis files contain "negativa sökord" or "negative keywords"
-        if "negativa sökord" in content.lower() or "negative keywords" in content.lower():
+        # Analysis files contain "Negative keywords" section
+        if "negative keywords" in content.lower():
             # Also check it's not an RSA file that mentions it
-            if "kampanj:" not in first_lines and "campaign:" not in first_lines:
+            if "campaign:" not in first_lines:
                 analysis = f
                 continue
 
-        # RSA files start with "Kampanj:" or "Campaign:"
+        # RSA files start with "Campaign:"
         first_content_line = ""
         for line in content.splitlines():
             stripped = line.strip()
@@ -321,7 +307,7 @@ def classify_files(input_dir: Path) -> tuple[Path | None, list[Path]]:
                 first_content_line = stripped.lower()
                 break
 
-        if first_content_line.startswith("kampanj:") or first_content_line.startswith("campaign:"):
+        if first_content_line.startswith("campaign:"):
             rsa_files.append(f)
 
     return analysis, rsa_files
@@ -428,16 +414,14 @@ def generate_csv(
     tracking_template: str = "",
     final_url_suffix: str = "",
     language: str = "sv",
-    included_locations: list[str] | None = None,
-    excluded_locations: list[str] | None = None,
+    locations: list[tuple[str | None, str | None]] | None = None,
 ) -> tuple[str, list[dict]]:
     """
     Generate all CSV rows. Returns (campaign_name, rows).
 
-    included_locations / excluded_locations are lists of Google Ads geo target
-    Criteria ID strings. Each ID produces its own row in the CSV. Excluded
-    locations get Criterion Type "Excluded" so Google Ads Editor treats them
-    as negative location targets.
+    locations is a list of (location_id, location_name) tuples – one per
+    target location. Each tuple produces its own row in the CSV, which is
+    what Google Ads Editor expects.
     """
     if not ad_groups:
         raise ValueError("No ad groups found to generate CSV from.")
@@ -468,20 +452,15 @@ def generate_csv(
     )
     rows.append(campaign_row)
 
-    # 2. Location targeting rows – one row per included location
-    if included_locations:
-        for loc_id in included_locations:
-            loc_row = make_row(Campaign=campaign_name, **{"Location ID": loc_id})
-            rows.append(loc_row)
-
-    # 2b. Excluded location rows
-    if excluded_locations:
-        for loc_id in excluded_locations:
-            loc_row = make_row(
-                Campaign=campaign_name,
-                **{"Location ID": loc_id},
-                **{"Criterion Type": "Excluded"},
-            )
+    # 2. Location targeting rows – one row per location
+    if locations:
+        for loc_id, loc_name in locations:
+            if loc_id:
+                loc_row = make_row(Campaign=campaign_name, **{"Location ID": loc_id})
+            elif loc_name:
+                loc_row = make_row(Campaign=campaign_name, Location=loc_name)
+            else:
+                continue
             rows.append(loc_row)
 
     # 3. Per ad group
@@ -500,23 +479,13 @@ def generate_csv(
         ag_row = make_row(**ag_row_data)
         rows.append(ag_row)
 
-        # Keyword rows – Google Ads Editor requires match-type formatting in
-        # BOTH the keyword text and the Criterion Type column. Phrase match
-        # keywords must be wrapped in "...", exact match in [...], and broad
-        # match left unformatted. This mirrors what we already do for negative
-        # keywords and ensures Google Ads Editor correctly imports the match type.
+        # Keyword rows
         keywords = parse_keywords(ag["keywords_raw"])
         for kw, match_type in keywords:
-            if match_type == "Phrase":
-                formatted_kw = f'"{kw}"'
-            elif match_type == "Exact":
-                formatted_kw = f'[{kw}]'
-            else:
-                formatted_kw = kw  # Broad – no wrapping
             kw_row = make_row(
                 Campaign=campaign_name,
                 **{"Ad Group": ag["ad_group"]},
-                Keyword=formatted_kw,
+                Keyword=kw,
                 **{"Criterion Type": match_type},
                 Status="Enabled",
             )
@@ -563,12 +532,41 @@ def generate_csv(
     return campaign_name, rows
 
 
+def sanitize_field(value: str) -> str:
+    """Remove tab and newline characters from a field value.
+
+    Google Ads Editor TSV format cannot represent literal tabs or newlines
+    inside field values (tabs are delimiters, newlines are row separators).
+    This function replaces them with spaces to prevent CSV write errors.
+    """
+    return value.replace("\t", " ").replace("\n", " ").replace("\r", "")
+
+
 def write_csv(rows: list[dict], output_path: Path) -> None:
-    """Write rows to a CSV file with UTF-8 BOM encoding."""
-    with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=ALL_COLUMNS, quoting=csv.QUOTE_MINIMAL)
+    """Write rows as tab-separated values with UTF-16 LE BOM encoding.
+
+    Google Ads Editor expects TSV (tab-separated) with UTF-16 LE encoding,
+    which is also what it exports. Using comma-separated CSV causes parse
+    failures when ad text contains commas, because Google Ads Editor does
+    not respect CSV quoting rules.
+    """
+    # Sanitize all field values to remove tabs and newlines
+    sanitized_rows = [
+        {k: sanitize_field(v) for k, v in row.items()} for row in rows
+    ]
+    with open(output_path, "w", encoding="utf-16-le", newline="") as f:
+        # Write UTF-16 LE BOM
+        f.write("\ufeff")
+        writer = csv.DictWriter(
+            f,
+            fieldnames=ALL_COLUMNS,
+            delimiter="\t",
+            quoting=csv.QUOTE_NONE,
+            escapechar=None,
+            quotechar=None,
+        )
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(sanitized_rows)
 
 
 # ---------------------------------------------------------------------------
@@ -624,8 +622,8 @@ def main():
     parser.add_argument("--tracking-template", default="", help="Tracking template")
     parser.add_argument("--final-url-suffix", default="", help="Final URL suffix")
     parser.add_argument("--language", default="", help="Language code (e.g. sv, en)")
-    parser.add_argument("--location-ids", default="",
-                        help="Comma-separated Location IDs ([+|-]ID,...)")
+    parser.add_argument("--location-id", default="", help="Google Ads Location ID")
+    parser.add_argument("--location-name", default="", help="Location name (fallback)")
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
@@ -667,15 +665,16 @@ def main():
             all_keywords.extend([kw for kw, _ in kws])
         language = detect_language(all_keywords)
 
-    # Resolve locations – CLI flag takes precedence, otherwise parse from RSA files
-    included_locations: list[str] = []
-    excluded_locations: list[str] = []
-    if args.location_ids:
-        included_locations, excluded_locations = parse_location_ids(args.location_ids)
+    # Resolve locations – CLI flags take precedence, otherwise parse from RSA files
+    locations: list[tuple[str | None, str | None]] = []
+    if args.location_id:
+        locations = [(args.location_id, None)]
+    elif args.location_name:
+        locations = [(None, args.location_name)]
     elif ad_groups:
         loc_text = ad_groups[0].get("location_targeting", "")
         if loc_text:
-            included_locations, excluded_locations = parse_location_ids(loc_text)
+            locations = resolve_location(loc_text)
 
     # Validate
     warnings = validate_ads(ad_groups)
@@ -693,8 +692,7 @@ def main():
         tracking_template=args.tracking_template,
         final_url_suffix=args.final_url_suffix,
         language=language,
-        included_locations=included_locations,
-        excluded_locations=excluded_locations,
+        locations=locations,
     )
 
     # Build filename
@@ -710,8 +708,10 @@ def main():
     stats["filename"] = filename
     stats["output_path"] = str(output_path)
     stats["language"] = language
-    stats["included_locations"] = included_locations
-    stats["excluded_locations"] = excluded_locations
+    stats["locations"] = [
+        {"location_id": lid or "", "location_name": lname or ""}
+        for lid, lname in locations
+    ]
     stats["warnings"] = warnings
 
     import json

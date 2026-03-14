@@ -1,21 +1,13 @@
 # Kamerabevakning för företag och brf – SafeTeam
 
-## Sammanfattning
+## Summary
 
-**Sida:** https://safeteam.se/vi-erbjuder/kamerabevakning/
-**Avsändare:** SafeTeam (SafeTeam i Sverige AB)
-**Geografi:** Ingen avgränsning (nationell) – sidan har regionala sektioner för Stockholm, Göteborg, Malmö, Linköping och Trollhättan
+**Page:** https://safeteam.se/vi-erbjuder/kamerabevakning/
+**Sender:** SafeTeam (SafeTeam i Sverige AB)
+**Geography:** Ingen avgränsning (nationell) – sidan har regionala sektioner för Stockholm, Göteborg, Malmö, Linköping och Trollhättan
 **CTA:** Generisk – "Få ett prisförslag"
-**Organisk ranking:** SafeTeam rankar #1 organiskt för "kamerabevakning företag". Annonserar på "perimeterskydd", "kamerabevakning brf" och "övervakningskamera".
 
-### SERP-insikter
-
-- **"övervakningskamera" utan qualifier:** Triggar Google Shopping med konsumentprodukter (Arlo, TP-Link, Eufy). Behöver kvalificerare som "företag" eller "brf" för att nå rätt målgrupp.
-- **"perimeterskydd":** SERP domineras av fysiska barriärer (stängsel, grindar). SafeTeam annonserar med kamerafokus – relevant men delvis avvikande sökintention.
-- **"kamerabevakning brf":** Starkt juridiskt/regelverksfokus i SERP. Konkurrenter: SBC, Nabo, HSB, Finlarm. IMY:s sida rankar högt.
-- **"kamerabevakning företag":** Google visar AI-översikt med regelverksfokus. Konkurrenter i SERP: Securitas Direct (sponsrad), SOS Alarm, Svensk Kamerabevakning, NOCAB Säkerhet.
-
-## Målgruppssegment och erbjudanden
+## Target segments and offers
 
 - Styrelseledamöter i brf:er → kamerabevakning
 - Fastighetsförvaltare för flerbostadshus → kamerabevakning
@@ -23,13 +15,13 @@
 - Byggbolag → kamerabevakning för byggarbetsplatser
 - Ansvariga inom skola och vård → kamerabevakning
 
-## Sökordskluster
+## Keyword clusters
 
 ### Varumärke: SafeTeam
 
-**Målgruppssegment:** alla
-**Erbjudande:** kamerabevakning
-**Sökintention:** navigational
+**Target segment:** alla
+**Offer:** kamerabevakning
+**Search intent:** navigational
 
 - SafeTeam
 - SafeTeam kamerabevakning
@@ -39,9 +31,9 @@
 
 ### Kamerabevakning – generellt
 
-**Målgruppssegment:** alla
-**Erbjudande:** kamerabevakning
-**Sökintention:** commercial investigation
+**Target segment:** alla
+**Offer:** kamerabevakning
+**Search intent:** commercial investigation
 
 - kamerabevakning
 - kameraövervakning
@@ -62,9 +54,9 @@
 
 ### Kamerabevakning brf och flerbostadshus
 
-**Målgruppssegment:** styrelseledamöter i brf:er och flerbostadshus
-**Erbjudande:** kamerabevakning
-**Sökintention:** transactional
+**Target segment:** styrelseledamöter i brf:er och flerbostadshus
+**Offer:** kamerabevakning
+**Search intent:** transactional
 
 - kamerabevakning brf
 - kameraövervakning brf
@@ -79,9 +71,9 @@
 
 ### Kamerabevakning brf och flerbostadshus
 
-**Målgruppssegment:** fastighetsförvaltare av flerbostadshus
-**Erbjudande:** kamerabevakning
-**Sökintention:** transactional
+**Target segment:** fastighetsförvaltare av flerbostadshus
+**Offer:** kamerabevakning
+**Search intent:** transactional
 
 - kamerabevakning flerbostadshus
 - kamerabevakning garage
@@ -94,9 +86,9 @@
 
 ### Kamerabevakning företag
 
-**Målgruppssegment:** säkerhetsansvariga på företag
-**Erbjudande:** kamerabevakning
-**Sökintention:** commercial investigation
+**Target segment:** säkerhetsansvariga på företag
+**Offer:** kamerabevakning
+**Search intent:** commercial investigation
 
 - kamerabevakning företag
 - kameraövervakning företag
@@ -114,9 +106,9 @@
 
 ### Kamerabevakning utomhus och perimeterskydd
 
-**Målgruppssegment:** säkerhetsansvariga på företag, fastighetsförvaltare
-**Erbjudande:** kamerabevakning utomhus
-**Sökintention:** commercial investigation
+**Target segment:** säkerhetsansvariga på företag, fastighetsförvaltare
+**Offer:** kamerabevakning utomhus
+**Search intent:** commercial investigation
 
 - kamerabevakning utomhus
 - kameraövervakning utomhus
@@ -130,9 +122,9 @@
 
 ### Kamerabevakning byggarbetsplats
 
-**Målgruppssegment:** byggbolag
-**Erbjudande:** kamerabevakning för byggarbetsplatser
-**Sökintention:** transactional
+**Target segment:** byggbolag
+**Offer:** kamerabevakning för byggarbetsplatser
+**Search intent:** transactional
 
 - kamerabevakning byggarbetsplats
 - övervakningskamera byggarbetsplats
@@ -143,9 +135,9 @@
 
 ### Kamerabevakning skola och vård
 
-**Målgruppssegment:** ansvariga inom skola och vård
-**Erbjudande:** kamerabevakning
-**Sökintention:** commercial investigation
+**Target segment:** ansvariga inom skola och vård
+**Offer:** kamerabevakning
+**Search intent:** commercial investigation
 
 - kamerabevakning skola
 - kameraövervakning skola
@@ -156,9 +148,9 @@
 
 ### AI och videoanalys
 
-**Målgruppssegment:** alla
-**Erbjudande:** videoanalys och AI-baserad kamerabevakning
-**Sökintention:** commercial investigation
+**Target segment:** alla
+**Offer:** videoanalys och AI-baserad kamerabevakning
+**Search intent:** commercial investigation
 
 - videoanalys
 - videoanalys kamera
@@ -171,9 +163,9 @@
 
 ### Molnbaserad kamerabevakning
 
-**Målgruppssegment:** alla
-**Erbjudande:** molnbaserad kamerabevakning (Kamera Online)
-**Sökintention:** commercial investigation
+**Target segment:** alla
+**Offer:** molnbaserad kamerabevakning (Kamera Online)
+**Search intent:** commercial investigation
 
 - molnbaserad kamerabevakning
 - kamera online
@@ -183,9 +175,9 @@
 
 ### Kamerabevakning – pris och utvärdering
 
-**Målgruppssegment:** alla
-**Erbjudande:** kamerabevakning
-**Sökintention:** commercial investigation
+**Target segment:** alla
+**Offer:** kamerabevakning
+**Search intent:** commercial investigation
 
 - kamerabevakning pris
 - vad kostar kamerabevakning
@@ -198,9 +190,9 @@
 
 ### Kamerabevakningslagen och regler
 
-**Målgruppssegment:** alla
-**Erbjudande:** kamerabevakning (indirekt – sökaren orienterar sig om regelverket)
-**Sökintention:** informational
+**Target segment:** alla
+**Offer:** kamerabevakning (indirekt – sökaren orienterar sig om regelverket)
+**Search intent:** informational
 
 - kamerabevakningslagen
 - tillstånd kameraövervakning
@@ -219,9 +211,9 @@
 
 ### Kamerabevakning – geografiska sökord
 
-**Målgruppssegment:** alla
-**Erbjudande:** kamerabevakning
-**Sökintention:** transactional
+**Target segment:** alla
+**Offer:** kamerabevakning
+**Search intent:** transactional
 
 - kamerabevakning stockholm
 - kamerabevakning göteborg
@@ -230,7 +222,7 @@
 - kameraövervakning göteborg
 - kameraövervakning malmö
 
-## Negativa sökord
+## Negative keywords
 
 - hemma
 - hem

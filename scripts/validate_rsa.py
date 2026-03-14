@@ -33,27 +33,27 @@ def validate_markdown_file(filepath: str) -> list[dict]:
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
 
-        # Match headlines: "Rubrik N (P): text"
-        m = re.match(r"^Rubrik\s+(\d+)\s*\([^)]*\)\s*:\s*(.+)$", stripped)
+        # Match headlines: "Headline N (P): text" (English)
+        m = re.match(r"^Headline\s+(\d+)\s*\([^)]*\)\s*:\s*(.+)$", stripped)
         if m:
             num = m.group(1)
             text = m.group(2).strip()
-            # Remove trailing bracket annotations like [23 tecken – ...]
+            # Remove trailing bracket annotations like [23 chars – ...]
             text = re.sub(r"\s*\[.*\]\s*$", "", text).strip()
             char_count = len(text)
             if char_count > HEADLINE_MAX:
                 violations.append({
                     "file": filepath,
                     "line": i,
-                    "field": f"Rubrik {num}",
+                    "field": f"Headline {num}",
                     "limit": HEADLINE_MAX,
                     "actual": char_count,
                     "text": text,
                 })
             continue
 
-        # Match descriptions: "Beskrivning N (P): text"
-        m = re.match(r"^Beskrivning\s+(\d+)\s*\([^)]*\)\s*:\s*(.+)$", stripped)
+        # Match descriptions: "Description N (P): text" (English)
+        m = re.match(r"^Description\s+(\d+)\s*\([^)]*\)\s*:\s*(.+)$", stripped)
         if m:
             num = m.group(1)
             text = m.group(2).strip()
@@ -63,15 +63,15 @@ def validate_markdown_file(filepath: str) -> list[dict]:
                 violations.append({
                     "file": filepath,
                     "line": i,
-                    "field": f"Beskrivning {num}",
+                    "field": f"Description {num}",
                     "limit": DESCRIPTION_MAX,
                     "actual": char_count,
                     "text": text,
                 })
             continue
 
-        # Match display path level 1
-        m = re.match(r"^Visningsadress\s*–\s*nivå\s*1\s*:\s*(.+)$", stripped)
+        # Match display path level 1 (English)
+        m = re.match(r"^Display path\s*[–-]\s*level\s*1\s*:\s*(.+)$", stripped)
         if m:
             text = m.group(1).strip()
             text = re.sub(r"\s*\[.*\]\s*$", "", text).strip()
@@ -80,15 +80,15 @@ def validate_markdown_file(filepath: str) -> list[dict]:
                 violations.append({
                     "file": filepath,
                     "line": i,
-                    "field": "Visningsadress – nivå 1",
+                    "field": "Display path – level 1",
                     "limit": DISPLAY_PATH_MAX,
                     "actual": char_count,
                     "text": text,
                 })
             continue
 
-        # Match display path level 2
-        m = re.match(r"^Visningsadress\s*–\s*nivå\s*2\s*:\s*(.+)$", stripped)
+        # Match display path level 2 (English)
+        m = re.match(r"^Display path\s*[–-]\s*level\s*2\s*:\s*(.+)$", stripped)
         if m:
             text = m.group(1).strip()
             text = re.sub(r"\s*\[.*\]\s*$", "", text).strip()
@@ -97,7 +97,7 @@ def validate_markdown_file(filepath: str) -> list[dict]:
                 violations.append({
                     "file": filepath,
                     "line": i,
-                    "field": "Visningsadress – nivå 2",
+                    "field": "Display path – level 2",
                     "limit": DISPLAY_PATH_MAX,
                     "actual": char_count,
                     "text": text,

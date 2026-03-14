@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_geo
 Keywords: "kamerabevakning stockholm", "kamerabevakning göteborg", "kamerabevakning malmö", "kameraövervakning stockholm", "kameraövervakning göteborg", "kameraövervakning malmö"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

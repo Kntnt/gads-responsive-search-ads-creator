@@ -1,20 +1,20 @@
-# gads-editor-csv-creator
+# gads-responsive-search-ads-creator
 
-A Claude skill that generates a Google Ads Editor CSV import file from analysis and RSA Markdown files.
+A Claude skill that generates complete Responsive Search Ad (RSA) copy for Google Ads -- one Markdown document per keyword cluster.
 
 ## What it does
 
-Given a folder of Markdown files produced by [gads-landing-page-analyzer](https://github.com/Kntnt/gads-landing-page-analyzer) and [gads-responsive-search-ads-creator](https://github.com/Kntnt/gads-responsive-search-ads-creator), this skill produces a single CSV file ready for import into Google Ads Editor -- complete with campaign settings, location targeting, ad groups, keywords, RSA ads, and negative keywords.
+Given a landing page analysis produced by [gads-landing-page-analyzer](https://github.com/Kntnt/gads-landing-page-analyzer), this skill generates publication-ready RSA ad copy with all fields Google Ads requires: campaign name, ad group, keywords with match types, location targeting (numeric Criteria IDs), display paths, 15 headlines, and 4 descriptions -- all within Google's character limits.
 
-This is the third and final link in a toolchain:
+This is the second link in a toolchain:
 
-1. **gads-landing-page-analyzer** -- analyzes a landing page and produces keyword clusters
-2. **gads-responsive-search-ads-creator** -- generates RSA ad copy for each cluster
-3. **gads-editor-csv-creator** (this skill) -- turns it all into a Google Ads Editor CSV
+1. **gads-landing-page-analyzer** -- analyzes a landing page and produces keyword clusters with standardized English headings
+2. **gads-responsive-search-ads-creator** (this skill) -- generates RSA ad copy for each cluster
+3. **gads-editor-csv-creator** -- turns it all into a Google Ads Editor import file
 
 ## When it triggers
 
-The skill activates when you ask Claude to create a Google Ads Editor CSV, import file, or export ad copy to Editor format. Trigger phrases include "CSV", "Google Ads Editor", "import file", "importfil", "Editor CSV", "skapa CSV", and similar. It also triggers on "next step" after running the RSA creator.
+The skill activates when you ask Claude to create RSA ads, ad copy, or responsive search ads based on a landing page analysis. Trigger phrases include "create ads", "RSA", "responsive search ads", "ad copy", "make ads", and similar. It also triggers on "now I want ads" after running the landing page analyzer.
 
 ## Installation
 
@@ -25,35 +25,60 @@ In Claude Desktop (Cowork), install the packaged `.skill` file via the skill ins
 ```
 SKILL.md                           Main skill instructions
 scripts/
-  generate_csv.py                  CSV generation script (parsing, validation, output)
+  validate_rsa.py                  Character limit validation script
+  generate_csv.py                  CSV generation script (from gads-editor-csv-creator, for testing)
 references/
-  exempel/                         Example input files (analysis + RSA Markdown)
+  worked-example.md                Complete worked example for one cluster
+  exempel/                         Full set of example RSA files + analysis
+evals/
+  evals.json                       Test case definitions
 ```
 
-## Configuration
+## Input format
 
-During CSV generation, the skill asks for:
+The skill reads an analysis file with standardized English headings:
 
-- **Daily budget** -- campaign budget (optional)
-- **Target CPA** -- target cost per acquisition for the Maximize conversions bid strategy
-- **Tracking settings** -- default, suggested UTM template, or custom
+- `## Summary` with `**Page:**`, `**Sender:**`, `**Geography:**`, `**CTA:**`
+- `## Target segments and offers`
+- `## Keyword clusters` with `**Target segment:**`, `**Offer:**`, `**Search intent:**`
+- `## Negative keywords`
 
-## Opinionated defaults
+Note: while headings and labels are always in English, the content (cluster names, keywords, descriptions) follows the document's language.
 
-The skill follows best practices as defaults:
+## Output format
 
-- **Maximize conversions with Target CPA** as the bid strategy
-- **Nominal ad group bids** (0.01) for Default max. CPC, Max. CPM, Target CPV, and Target CPM -- required by Google Ads Editor even when using smart bidding (the values have no effect on actual bidding)
-- **One location row per target location** -- location targeting uses numeric Google Ads Criteria IDs (format: `[+|-]ID, ...`). Each ID produces its own row. IDs prefixed with `-` are excluded (negative targeting).
-- **Phrase match** as the default keyword match type
-- **Google Search only** -- no Search Partners
-- **Campaign paused, everything else enabled** at creation -- enable the campaign to go live
-- **EU political ads declaration** set to "No" by default
-- **Negative keywords at campaign level** with phrase match
+Each RSA file uses English field names for downstream compatibility with gads-editor-csv-creator:
 
-## Future extension (v2)
+```
+Campaign: <name>
+Ad group: <name>
+Keywords: "kw1", "kw2", [kw3], kw4
+Location targeting: <Criteria ID(s) or empty>
+Final URL: <URL>
+Display path – level 1: <max 15 chars>
+Display path – level 2: <max 15 chars>
+Headline 1 (any position): <max 30 chars>
+...
+Description 1 (any position): <max 90 chars>
+...
+```
 
-A future version will support **updating existing campaigns** using `#Original` columns. This requires the user to provide an exported CSV from Google Ads Editor (current state) alongside updated RSA files. The skill will compare and produce `#Original` columns for changed fields. This is not in scope for v1.
+### Key conventions
+
+- **Keywords** use match-type wrapping: `"keyword"` for phrase, `[keyword]` for exact, bare for broad
+- **Location targeting** line is always present. Leave the value empty when no geo targeting is needed. When targeting specific areas, uses numeric Google Ads Criteria IDs (e.g. `1012511` for Gothenburg). Geo targeting info can come from CLAUDE.md, the analysis file, or the user.
+- **Multiple ads** in the same ad group are separated by `---`
+- **Headline/Description positions**: `(any position)`, `(position 1)`, `(position 2)`, `(position 3)`
+
+## Character limits
+
+Google Ads enforces strict character limits:
+
+- Headlines: max 30 characters
+- Descriptions: max 90 characters
+- Display paths: max 15 characters each
+
+The bundled `validate_rsa.py` script programmatically checks these limits after generation.
 
 ## License
 

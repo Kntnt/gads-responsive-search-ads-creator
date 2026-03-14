@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_utomhus
 Keywords: "kamerabevakning utomhus", "kameraövervakning utomhus", "övervakningskamera utomhus", "utomhuskamera bevakning", "perimeterskydd", "perimeterskydd kamera", "utomhusövervakning företag", "områdesskydd", "perimetersäkerhet"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning

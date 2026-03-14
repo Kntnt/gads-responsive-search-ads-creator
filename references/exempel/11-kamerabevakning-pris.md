@@ -1,7 +1,7 @@
 Campaign: Kamerabevakning
 Ad group: Kamerabevakning_pris
 Keywords: "kamerabevakning pris", "vad kostar kamerabevakning", "övervakningskamera pris företag", "kamerabevakning offert", "kamerabevakning jämförelse", "bästa kamerabevakning företag", "kamerainstallation pris", "CCTV installation pris"
-Location targeting: National
+Location targeting:
 Final URL: https://safeteam.se/vi-erbjuder/kamerabevakning/
 Display path – level 1: vi-erbjuder
 Display path – level 2: kamerabevakning
