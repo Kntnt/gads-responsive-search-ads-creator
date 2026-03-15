@@ -22,6 +22,55 @@ HEADLINE_MAX = 30
 DESCRIPTION_MAX = 90
 DISPLAY_PATH_MAX = 15
 
+# Regex for the three supported location targeting formats:
+#   1. Location ID:       purely numeric, e.g. "1012421"
+#   2. Location name:     free text, e.g. "Kungsor, Vastmanland County, Sweden"
+#   3. Proximity target:  (Xkm:lat:lon), e.g. "(15km:58.767077:11.631213)"
+_PROXIMITY_RE = re.compile(
+    r"^\(\d+(?:\.\d+)?\s*km\s*:\s*-?\d+(?:\.\d+)?\s*:\s*-?\d+(?:\.\d+)?\)$"
+)
+
+
+def validate_location_entry(entry: str) -> str | None:
+    """Validate a single location targeting entry.
+
+    Returns an error message string if invalid, or None if valid.
+    """
+    if entry.isdigit():
+        return None  # Valid Location ID
+    if _PROXIMITY_RE.match(entry):
+        return None  # Valid proximity target
+    # Anything else is treated as a location name – must be non-empty
+    if entry:
+        return None  # Valid location name (free text)
+    return "Empty location entry"
+
+
+def validate_location_targeting(line_value: str, filepath: str, line_num: int) -> list[dict]:
+    """Validate a full Location targeting line value.
+
+    Returns a list of violation dicts (same format as character-limit violations).
+    """
+    violations = []
+    if not line_value.strip():
+        return violations  # Empty is valid – means no geo targeting
+
+    entries = [e.strip() for e in line_value.split(";")]
+    for entry in entries:
+        if not entry:
+            continue
+        error = validate_location_entry(entry)
+        if error:
+            violations.append({
+                "file": filepath,
+                "line": line_num,
+                "field": "Location targeting",
+                "limit": 0,
+                "actual": 0,
+                "text": f"{error}: '{entry}'",
+            })
+    return violations
+
 
 def validate_markdown_file(filepath: str) -> list[dict]:
     """Parse a Markdown RSA file and check character limits."""
@@ -102,6 +151,14 @@ def validate_markdown_file(filepath: str) -> list[dict]:
                     "actual": char_count,
                     "text": text,
                 })
+            continue
+
+        # Match Location targeting line (English)
+        m = re.match(r"^Location targeting\s*:\s*(.*)$", stripped, re.IGNORECASE)
+        if m:
+            loc_value = m.group(1).strip()
+            loc_violations = validate_location_targeting(loc_value, filepath, i)
+            violations.extend(loc_violations)
             continue
 
     return violations

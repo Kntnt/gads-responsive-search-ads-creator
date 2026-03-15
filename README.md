@@ -4,7 +4,7 @@ A Claude skill that generates complete Responsive Search Ad (RSA) copy for Googl
 
 ## What it does
 
-Given a landing page analysis produced by [gads-landing-page-analyzer](https://github.com/Kntnt/gads-landing-page-analyzer), this skill generates publication-ready RSA ad copy with all fields Google Ads requires: campaign name, ad group, keywords with match types, location targeting (numeric Criteria IDs), display paths, 15 headlines, and 4 descriptions -- all within Google's character limits.
+Given a landing page analysis produced by [gads-landing-page-analyzer](https://github.com/Kntnt/gads-landing-page-analyzer), this skill generates publication-ready RSA ad copy with all fields Google Ads requires: campaign name, ad group, keywords with match types, location targeting (Criteria IDs, place names, and/or proximity targets), display paths, 15 headlines, and 4 descriptions -- all within Google's character limits.
 
 This is the second link in a toolchain:
 
@@ -53,7 +53,7 @@ Each RSA file uses English field names for downstream compatibility with gads-ed
 Campaign: <name>
 Ad group: <name>
 Keywords: "kw1", "kw2", [kw3], kw4
-Location targeting: <Criteria ID(s) or empty>
+Location targeting: <semicolon-separated IDs, names, or proximity targets – or empty>
 Final URL: <URL>
 Display path – level 1: <max 15 chars>
 Display path – level 2: <max 15 chars>
@@ -66,7 +66,11 @@ Description 1 (any position): <max 90 chars>
 ### Key conventions
 
 - **Keywords** use match-type wrapping: `"keyword"` for phrase, `[keyword]` for exact, bare for broad
-- **Location targeting** line is always present. Leave the value empty when no geo targeting is needed. When targeting specific areas, uses numeric Google Ads Criteria IDs (e.g. `1012511` for Gothenburg). Geo targeting info can come from CLAUDE.md, the analysis file, or the user.
+- **Location targeting** line is always present. Leave the value empty when no geo targeting is needed. When targeting specific areas, list entries separated by semicolons. Three formats are supported and can be mixed:
+  - **Location ID**: a numeric Criteria ID (e.g. `1012511` for Gothenburg)
+  - **Location name**: a human-readable place name (e.g. `Kungsor, Vastmanland County, Sweden`)
+  - **Proximity target**: radius around a coordinate as `(<radius>km:<lat>:<lon>)` (e.g. `(15km:58.767077:11.631213)`)
+  - Geo targeting info can come from CLAUDE.md, the analysis file, or the user.
 - **Multiple ads** in the same ad group are separated by `---`
 - **Headline/Description positions**: `(any position)`, `(position 1)`, `(position 2)`, `(position 3)`
 

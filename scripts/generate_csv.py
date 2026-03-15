@@ -59,25 +59,40 @@ def detect_language(keywords: list[str]) -> str:
 
 def resolve_location(location_text: str) -> list[tuple[str | None, str | None]]:
     """
-    Parse a location string that may contain multiple locations separated by
-    commas, semicolons, or newlines. Returns a list of (location_id, location_name)
-    tuples – one per location. Google Ads Editor needs one row per location.
+    Parse a location string containing one or more locations separated by
+    semicolons. Returns a list of (location_id, location_name) tuples – one
+    per location. Google Ads Editor needs one row per location.
 
-    The function does not attempt to translate or look up location names. It
-    simply checks whether each value is numeric (→ Location ID column) or
-    text (→ Location column). The responsibility for providing correct
-    Location IDs lies with the earlier steps in the toolchain.
+    Three formats are supported and can be mixed on the same line:
+
+    1. Location ID – a purely numeric string (e.g. ``1012421``).
+       → placed in the "Location ID" CSV column.
+    2. Location name – a human-readable place name
+       (e.g. ``Kungsor, Vastmanland County, Sweden``).
+       → placed in the "Location" CSV column.
+    3. Proximity target – ``(<radius>km:<lat>:<lon>)``
+       (e.g. ``(15km:58.767077:11.631213)``).
+       → placed in the "Location" CSV column as-is, which is the format
+         Google Ads Editor expects for radius targeting.
+
+    The responsibility for providing correct Location IDs and coordinates
+    lies with the earlier steps in the toolchain.
     """
-    parts = re.split(r"[,;\n]+", location_text)
+    # Proximity targets contain colons, so we cannot split on colons.
+    # The canonical separator is semicolon, but we also accept newlines.
+    parts = re.split(r"[;\n]+", location_text)
     results = []
     for part in parts:
         value = part.strip()
         if not value:
             continue
-        if value.isdigit():
+        # Proximity target: (Xkm:lat:lon)
+        if re.match(r"^\(\d+(\.\d+)?\s*km\s*:\s*-?\d+(\.\d+)?\s*:\s*-?\d+(\.\d+)?\)$", value):
+            results.append((None, value))   # -> Location (proximity)
+        elif value.isdigit():
             results.append((value, None))   # -> Location ID
         else:
-            results.append((None, value))   # -> Location (free text)
+            results.append((None, value))   # -> Location (free text name)
     return results
 
 

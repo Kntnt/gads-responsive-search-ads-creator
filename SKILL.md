@@ -69,7 +69,7 @@ Each document uses this structure:
 Campaign: <Name>
 Ad group: <Name>
 Keywords: <comma-separated list in quotes>
-Location targeting: <Criteria ID(s) or empty>
+Location targeting: <semicolon-separated IDs, names, or proximity targets – or empty>
 Final URL: <URL>
 Display path – level 1: <max 15 chars>
 Display path – level 2: <max 15 chars>
@@ -99,19 +99,25 @@ The downstream CSV creator parses these wrapping characters to set the correct m
 
 **Location targeting:** This line is always present. It controls geographic targeting in Google Ads. **Leave the value empty** (nothing after the colon and space) if no specific geo targeting is needed (e.g. the analysis says national scope without restrictions, or no geography is mentioned).
 
-When geo targeting applies, use numeric Google Ads geo target Criteria IDs (from https://developers.google.com/google-ads/api/data/geotargets). Format: `[+|-]<ID>[, [+|-]<ID>]*`. IDs without prefix or with `+` are included; IDs with `-` are excluded.
+When geo targeting applies, list one or more locations **separated by semicolons**. Three formats are supported and can be mixed freely on the same line:
+
+1. **Location ID** – a numeric Google Ads geo target Criteria ID (from https://developers.google.com/google-ads/api/data/geotargets). Example: `1012511` (Gothenburg).
+2. **Location name** – a human-readable place name that Google Ads Editor recognizes. Example: `Kungsor, Vastmanland County, Sweden`.
+3. **Proximity target** – a radius around a coordinate, written as `(<radius>km:<latitude>:<longitude>)`. Example: `(15km:58.767077:11.631213)`.
 
 Examples:
 - `Location targeting:` → no geo targeting (empty value)
-- `Location targeting: 1012511` → Gothenburg only
-- `Location targeting: +21000, -1012511` → Stockholm County excluding Gothenburg
+- `Location targeting: 1012511` → Gothenburg only (by ID)
+- `Location targeting: Kungsor, Vastmanland County, Sweden` → Kungsör (by name)
+- `Location targeting: (15km:58.767077:11.631213)` → 15 km radius around a coordinate
+- `Location targeting: (10km:57.809148:14.210866); (15km:58.767077:11.631213); 1012421; Kungsor, Vastmanland County, Sweden` → mixed formats
 
 Sources for geo targeting information (checked in this order):
 1. `CLAUDE.md` or other project-level context already in the conversation
 2. The `**Geography:**` field in the analysis file's `## Summary` section
 3. Ask the user (only if neither of the above provides a clear answer)
 
-The downstream CSV creator reads this field and generates one location targeting row per ID in the output CSV. If the value is empty, no location targeting rows are created – the user sets targeting manually in Google Ads Editor.
+The downstream CSV creator reads this field and generates one location targeting row per entry in the output CSV. Location IDs are placed in the "Location ID" column; names and proximity targets are placed in the "Location" column. If the value is empty, no location targeting rows are created – the user sets targeting manually in Google Ads Editor.
 
 **Final URL:** The landing page URL from the analysis.
 
